@@ -1,27 +1,33 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRef } from "react"
-import { createPost } from "./api/posts"
-import Post from "./Post"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
+import { createPost } from "./api/posts";
+import Post from "./Post";
 
 export function CreatePost({ setCurrentPage }) {
-  const titleRef = useRef()
-  const bodyRef = useRef()
-  const queryClient = useQueryClient()
+  const titleRef = useRef();
+  const bodyRef = useRef();
+  const queryClient = useQueryClient();
   const createPostMutation = useMutation({
     mutationFn: createPost,
-    onSuccess: data => {
-      queryClient.setQueryData(["posts", data.id], data)
-      queryClient.invalidateQueries(["posts"], { exact: true })
-      setCurrentPage(<Post id={data.id} />)
+    //  retry: 3, // amount of retries
+    onSuccess: (data) => {
+      queryClient.setQueryData(["posts", data.id], data); // manually update data - don't wait for re-fetch
+      queryClient.invalidateQueries(["posts"], { exact: true }); // invalidate only query with ['posts'] exact matchm ['posts', 1] will be excluded
+      setCurrentPage(<Post id={data.id} />); // render new post data
     },
-  })
+    //  variable - same data that passed to mutate
+    // onSuccess: (data, variables, context) => {} // invoked on success mutation
+    // onError: (error, variables, context) => {} // invoked on error mutation
+    // onSettle: (data, error, variables, context) => {} // works similar to finally in Promises
+    // onMutate: (variables) // called before mutationFn, place where to set context
+  });
 
   function handleSubmit(e) {
-    e.preventDefault()
+    e.preventDefault();
     createPostMutation.mutate({
       title: titleRef.current.value,
       body: bodyRef.current.value,
-    })
+    });
   }
 
   return (
@@ -42,5 +48,5 @@ export function CreatePost({ setCurrentPage }) {
         </button>
       </form>
     </div>
-  )
+  );
 }
